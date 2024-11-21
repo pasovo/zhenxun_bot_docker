@@ -1,16 +1,18 @@
 #!/bin/bash
 
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # 加载 .env.dev 文件中的 PORT 变量
-if [ -f .env.dev ]; then
-    PORT=$(grep -oP '^PORT=\K[0-9]+' .env.dev)  # 提取 PORT 变量的值
-    export PORT  # 导出为环境变量
+if [ -f "$SCRIPT_DIR/.env.dev" ]; then
+    PORT=$(grep -oP '^PORT\s*=\s*(\d+)' "$SCRIPT_DIR/.env.dev" | sed 's/.*=\s*\([0-9]*\)/\1/')
 else
     echo ".env.dev 文件不存在。"
     exit 1
 fi
 
 # 检查是否占用端口，使用从 .env.dev 加载的 PORT 值
-pid=$(netstat -tunlp 2>/dev/null | grep -w "$PORT" | awk '{print $7}' | cut -d'/' -f1)
+pid=$(netstat -tunlp 2>/dev/null | grep $PORT | awk '{print $7}' | cut -d'/' -f1)
 
 if [[ -n "$pid" ]]; then
     echo "正在杀死占用端口 $PORT 的进程 $pid"
@@ -22,7 +24,7 @@ else
 fi
 
 # 再次检查端口是否被释放
-if netstat -tunlp 2>/dev/null | grep -q -w "$PORT"; then
+if netstat -tunlp 2>/dev/null | grep -q $PORT; then
     echo "端口 $PORT 仍被占用，重启镜像吧~"
     exit 1
 fi
