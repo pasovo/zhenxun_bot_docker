@@ -46,6 +46,7 @@ jobs:
           echo "No new version."
           echo "new_version=false" >> $GITHUB_ENV
           echo "::set-output name=new_version::false"
+        fi
 
     # 确保 restart.sh 存在
     - name: Ensure restart.sh Exists
