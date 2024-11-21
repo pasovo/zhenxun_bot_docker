@@ -14,7 +14,7 @@ RUN apt update && \
     g++ && \
     apt clean
 
-RUN pip install poetry 
+RUN pip install poetry -i https://mirrors.aliyun.com/pypi/simple/
 
 RUN poetry install
 
