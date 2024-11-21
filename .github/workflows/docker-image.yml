@@ -18,8 +18,8 @@ jobs:
     - name: Get Processed Version
       id: get-processed-version
       run: |
-        if [ -f processed_version.txt ]; then
-          processed_version=$(cat processed_version.txt)
+        if [ -f /tmp/zhenxun_bot_docker/processed_version.txt ]; then
+          processed_version=$(cat /tmp/zhenxun_bot_docker/processed_version.txt)
         else
           processed_version="none"
         fi
@@ -68,6 +68,23 @@ jobs:
       run: |
         cp -r /tmp/zhenxun_bot_docker/* /tmp/zhenxun_bot/
 
+    # 更新 processed_version.txt 文件
+    - name: Update processed_version.txt
+      if: steps.version-check.outputs.new_version == 'true'
+      run: |
+        echo "${{ env.latest_version }}" > /tmp/zhenxun_bot_docker/processed_version.txt
+
+    # 提交和推送修改后的 processed_version.txt 文件
+    - name: Commit and Push processed_version.txt
+      if: steps.version-check.outputs.new_version == 'true'
+      run: |
+        cd /tmp/zhenxun_bot_docker
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add processed_version.txt
+        git commit -m "Update processed_version.txt to ${{ env.latest_version }}"
+        git push
+
     # 登录到阿里云容器镜像服务并构建镜像
     - name: Build and Push Docker Image
       if: steps.version-check.outputs.new_version == 'true'
@@ -78,19 +95,3 @@ jobs:
         docker tag registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }}
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
-
-    # 更新 processed_version.txt 文件
-    - name: Update processed_version.txt
-      if: steps.version-check.outputs.new_version == 'true'
-      run: |
-        echo "${{ env.latest_version }}" > /tmp/zhenxun_bot_docker/processed_version.txt
-
-    # 在脚本末尾增加提交和推送操作
-    - name: Commit and Push processed_version.txt
-      if: steps.version-check.outputs.new_version == 'true'
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add processed_version.txt
-        git commit -m "Update processed_version.txt to ${{ env.latest_version }}"
-        git push
