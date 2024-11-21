@@ -19,7 +19,7 @@ webui几乎不能使用
 
 ## 使用方式
 因为我只用docker compose，所以这里也只提供docker compose~
- ```json
+ ```
 version: '3.8'
 
 services:
