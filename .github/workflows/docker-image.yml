@@ -78,4 +78,19 @@ jobs:
         docker tag registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }}
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
-        echo "${{ env.latest_version }}" > processed_version.txt
+
+    # 更新 processed_version.txt 文件
+    - name: Update processed_version.txt
+      if: steps.version-check.outputs.new_version == 'true'
+      run: |
+        echo "${{ env.latest_version }}" > /tmp/zhenxun_bot_docker/processed_version.txt
+
+    # 在脚本末尾增加提交和推送操作
+    - name: Commit and Push processed_version.txt
+      if: steps.version-check.outputs.new_version == 'true'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add processed_version.txt
+        git commit -m "Update processed_version.txt to ${{ env.latest_version }}"
+        git push
