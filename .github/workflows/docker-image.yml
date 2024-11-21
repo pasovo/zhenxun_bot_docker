@@ -2,7 +2,7 @@ name: Build and Release Docker Image
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 每小时执行一次
+    - cron: '0 */6 * * *'  # 每 6 小时执行一次
   workflow_dispatch:  # 手动触发支持
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
           processed_version="none"
         fi
         echo "Processed version: $processed_version"
-        echo "::set-output name=processed_version::$processed_version"
+        echo "processed_version=$processed_version" >> $GITHUB_ENV
 
     # 获取 zhenxun_bot 最新发布版本号
     - name: Get Latest Release Version of zhenxun_bot
@@ -32,58 +32,46 @@ jobs:
       run: |
         latest_release=$(curl -s https://api.github.com/repos/HibiKier/zhenxun_bot/releases/latest | jq -r .tag_name)
         echo "Latest release version is $latest_release"
-        echo "::set-output name=latest_version::$latest_release"
+        echo "latest_version=$latest_release" >> $GITHUB_ENV
 
     # 比较版本号
     - name: Check if New Version Exists
       id: version-check
       run: |
-        if [ "${{ steps.get-latest-version.outputs.latest_version }}" != "${{ steps.get-processed-version.outputs.processed_version }}" ]; then
-          echo "New version found: ${{ steps.get-latest-version.outputs.latest_version }}"
+        if [ "${{ env.latest_version }}" != "${{ env.processed_version }}" ]; then
+          echo "New version found: ${{ env.latest_version }}"
           echo "new_version=true" >> $GITHUB_ENV
+          echo "::set-output name=new_version::true"
         else
           echo "No new version."
           echo "new_version=false" >> $GITHUB_ENV
+          echo "::set-output name=new_version::false"
+
+    # 确保 restart.sh 存在
+    - name: Ensure restart.sh Exists
+      run: |
+        if [ ! -f restart.sh ]; then
+          echo "Error: restart.sh not found"
+          exit 1
+        fi
 
     # 克隆 zhenxun_bot 并准备 Docker 构建
     - name: Clone zhenxun_bot and Prepare for Docker Build
-      if: env.new_version == 'true'
-      env:
-        IMAGE_TAG: ${{ steps.get-latest-version.outputs.latest_version }}
+      if: steps.version-check.outputs.new_version == 'true'
       run: |
-        # 克隆最新版本的 zhenxun_bot
-        git clone --branch ${{ env.IMAGE_TAG }} https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
-
-        # 准备 Docker 构建目录
+        git clone --branch ${{ env.latest_version }} https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
         mkdir -p /tmp/zhenxun_bot_docker/zhenxun/
         cp -r /tmp/zhenxun_bot/* /tmp/zhenxun_bot_docker/zhenxun/
-
-        # 复制 restart.sh 到构建目录
         cp restart.sh /tmp/zhenxun_bot_docker/zhenxun/
 
     # 登录到阿里云容器镜像服务并构建镜像
     - name: Build and Push Docker Image
-      if: env.new_version == 'true'
-      env:
-        IMAGE_TAG: ${{ steps.get-latest-version.outputs.latest_version }}
+      if: steps.version-check.outputs.new_version == 'true'
       run: |
-        # 登录到阿里云
         docker login -u "${{ secrets.REGISTRY_USERNAME }}" -p "${{ secrets.REGISTRY_PASSWORD }}" registry.cn-hangzhou.aliyuncs.com
-
-        # 构建镜像
         cd /tmp/zhenxun_bot_docker
-        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.IMAGE_TAG }} .
-        docker tag registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.IMAGE_TAG }} registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
-
-        # 推送镜像
-        docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.IMAGE_TAG }}
+        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} .
+        docker tag registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
+        docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }}
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
-
-        # 更新已处理的版本号
-        echo "${{ env.IMAGE_TAG }}" > processed_version.txt
-
-    # 更新处理状态
-    - name: Update Processed Version
-      if: env.new_version == 'true'
-      run: |
-        echo "Processed version updated to ${{ steps.get-latest-version.outputs.latest_version }}"
+        echo "${{ env.latest_version }}" > processed_version.txt
