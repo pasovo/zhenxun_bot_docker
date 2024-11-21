@@ -1,6 +1,6 @@
 FROM python:3.11-slim-bookworm
 
-EXPOSE 8989
+EXPOSE 8080
 
 WORKDIR /app/zhenxun
 
