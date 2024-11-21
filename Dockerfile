@@ -21,6 +21,7 @@ RUN poetry install
 VOLUME /app/zhenxun/data /app/zhenxun/data
 VOLUME /app/zhenxun/resources /app/zhenxun/resources
 VOLUME /app/zhenxun/.env.dev /app/zhenxun/.env.dev
+VOLUME /app/zhenxun/restart.sh /app/zhenxun/restart.sh
 
 RUN poetry run playwright install --with-deps chromium
 
