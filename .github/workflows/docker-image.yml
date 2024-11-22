@@ -17,7 +17,7 @@ jobs:
     # 克隆 zhenxun_bot_docker 仓库
     - name: Clone Repository
       run: |
-        git clone https://github.com/hui-ld/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker
+        git clone https://${{ secrets.GH_TOKEN }}@github.com/hui-ld/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker
         git clone --branch ${{ env.latest_version }} https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
 
     # 获取已处理的版本号
