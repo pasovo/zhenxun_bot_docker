@@ -90,6 +90,7 @@ async def _(bot: Bot):
                     "fi\n"
                 )
             os.system("chmod +x ./restart.sh")
+            os.system("sudo chown 1000:1001 ./restart.sh")
             RESTART_GENERATED_FLAG.touch()
             logger.info("已自动生成 restart.sh 文件， 检查脚本是否与本地指令符合...")
     if RESTART_MARK.exists():
