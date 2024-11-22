@@ -14,6 +14,12 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
+    # 克隆 zhenxun_bot_docker 仓库
+    - name: Clone Repository
+      run: |
+        git clone https://github.com/hui-ld/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker
+        git clone --branch ${{ env.latest_version }} https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
+
     # 获取已处理的版本号
     - name: Get Processed Version
       id: get-processed-version
@@ -44,15 +50,8 @@ jobs:
     - name: Handle New Version
       if: env.new_version == 'true'
       run: |
-        # 克隆 zhenxun_bot
-        git clone --branch ${{ env.latest_version }} https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
-        # 克隆 zhenxun_bot_docker
-        git clone https://${{ secrets.GH_TOKEN }}@github.com/hui-ld/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker
-        # 复制文件
         cp -r /tmp/zhenxun_bot_docker/* /tmp/zhenxun_bot/
-        # 更新 processed_version.txt
         echo "${{ env.latest_version }}" > /tmp/zhenxun_bot_docker/processed_version.txt
-        # 提交更新
         cd /tmp/zhenxun_bot_docker
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -66,7 +65,7 @@ jobs:
       run: |
         docker login -u "${{ secrets.REGISTRY_USERNAME }}" -p "${{ secrets.REGISTRY_PASSWORD }}" registry.cn-hangzhou.aliyuncs.com
         cd /tmp/zhenxun_bot
-        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} .
+        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} . 
         docker tag registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }}
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
