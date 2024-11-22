@@ -80,7 +80,7 @@ async def _(bot: Bot):
                     "#!/bin/bash\n"
                     "pid=$(netstat -tunlp | grep "
                     + str(bot.config.port)
-                    + " | awk '{print $7}')\n"
+                    + " | awk '{print $7}' | cut -d'/' -f1)\n"
                     "pid=${pid%/*}\n"
                     "kill -9 $pid\n"
                     "wait $pid 2>/dev/null || sleep 3\n"
