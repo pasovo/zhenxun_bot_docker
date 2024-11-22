@@ -46,6 +46,7 @@ RESTART_MARK = Path() / "is_restart"
 
 RESTART_FILE = Path() / "restart.sh"
 
+RESTART_GENERATED_FLAG = Path("data") / "restart"
 
 @_matcher.got(
     "flag",
@@ -73,22 +74,25 @@ async def _(bot: Bot, session: Uninfo, flag: str = ArgStr("flag")):
 @driver.on_bot_connect
 async def _(bot: Bot):
     if str(platform.system()).lower() != "windows":
-        async with aiofiles.open(RESTART_FILE, "w", encoding="utf8") as f:
-            await f.write(
-                "#!/bin/bash\n"
-                "pid=$(netstat -tunlp | grep "
-                + str(bot.config.port)
-                + " | awk '{print $7}' | cut -d'/' -f1)\n"
-                "pid=${pid%/*}\n"
-                "kill -9 $pid\n"
-                "wait $pid 2>/dev/null || sleep 2\n"
-                "if [[ -n \"$VIRTUAL_ENV\" ]]; then\n"
-                "    python3 bot.py\n"
-                "else\n"
-                "    poetry run python3 bot.py\n"
-                "fi\n"
-            )
-        os.system("chmod +x ./restart.sh")
+        if not RESTART_GENERATED_FLAG.exists():
+            async with aiofiles.open(RESTART_FILE, "w", encoding="utf8") as f:
+                await f.write(
+                    "#!/bin/bash\n"
+                    "pid=$(netstat -tunlp | grep "
+                    + str(bot.config.port)
+                    + " | awk '{print $7}' | cut -d'/' -f1)\n"
+                    "pid=${pid%/*}\n"
+                    "kill -9 $pid\n"
+                    "wait $pid 2>/dev/null || sleep 2\n"
+                    "if [[ -n \"$VIRTUAL_ENV\" ]]; then\n"
+                    "    python3 bot.py\n"
+                    "else\n"
+                    "    poetry run python3 bot.py\n"
+                    "fi\n"
+                )
+            os.system("chmod +x ./restart.sh")
+            RESTART_GENERATED_FLAG.touch()
+            logger.info("已自动生成 restart.sh 文件， 检查脚本是否与本地指令符合...")
     if RESTART_MARK.exists():
         async with aiofiles.open(RESTART_MARK, encoding="utf8") as f:
             bot_id, user_id = (await f.read()).split()
