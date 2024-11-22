@@ -77,6 +77,7 @@ async def _(bot: Bot):
         if not RESTART_GENERATED_FLAG.exists():
             async with aiofiles.open(RESTART_FILE, "w", encoding="utf8") as f:
                 await f.write(
+                    "#!/bin/bash\n"
                     "pid=$(netstat -tunlp | grep "
                     + str(bot.config.port)
                     + " | awk '{print $7}' | cut -d'/' -f1)\n"
