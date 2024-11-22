@@ -46,7 +46,7 @@ RESTART_MARK = Path() / "is_restart"
 
 RESTART_FILE = Path() / "restart.sh"
 
-RESTART_GENERATED_FLAG = Path() / "./.restart_generated"
+RESTART_GENERATED_FLAG = Path("data") / "restart"
 
 @_matcher.got(
     "flag",
