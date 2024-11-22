@@ -46,7 +46,7 @@ RESTART_MARK = Path() / "is_restart"
 
 RESTART_FILE = Path() / "restart.sh"
 
-RESTART_GENERATED_FLAG = Path() / "restart"
+OLD_RESTART_FILE = Path('data') / 'restart.sh'
 
 @_matcher.got(
     "flag",
@@ -74,41 +74,14 @@ async def _(bot: Bot, session: Uninfo, flag: str = ArgStr("flag")):
 @driver.on_bot_connect
 async def _(bot: Bot):
     if str(platform.system()).lower() != "windows":
-        if not RESTART_GENERATED_FLAG.exists():
-            async with aiofiles.open(RESTART_FILE, "w", encoding="utf8") as f:
-                await f.write(f"""#!/bin/bash
+        async with aiofiles.open(OLD_RESTART_FILE, "r", encoding="utf8") as f:
+            script_content = await f.read()
+        port = str(bot.config.port)
+        script_content = script_content.replace('PORT', port)
+        async with aiofiles.open(RESTART_FILE, "w", encoding="utf8") as f:
+            await f.write(script_content)
+        os.system(f"chmod +x {RESTART_FILE}")
 
-pid=$(netstat -tunlp 2>/dev/null | grep {str(bot.config.port)} | awk '{{print $7}}' | cut -d'/' -f1)
-if [[ -n "$pid" ]]; then
-    echo "正在杀死占用端口 {str(bot.config.port)} 的进程 $pid"
-    kill -9 $pid
-    echo "等待进程 $pid 退出..."
-    wait $pid 2>/dev/null || sleep 2 
-else
-    echo "没有进程占用端口 {str(bot.config.port)}"
-fi
-
-# 再次检查端口是否被释放
-if netstat -tunlp 2>/dev/null | grep -q {str(bot.config.port)}; then
-    echo "端口仍被占用，无法启动 bot.py"
-    exit 1
-fi
-
-# 检测是否在虚拟环境中
-if [[ -n "$VIRTUAL_ENV" ]]; then
-    echo "检测到当前在虚拟环境中，直接运行"
-    python3 bot.py 2>&1 | tee bot_error.log
-else
-    echo "未检测到虚拟环境，使用 poetry 运行"
-    poetry run python3 bot.py 2>&1 | tee bot_error.log
-fi
-
-echo "done"
-
-""")
-            os.system("chmod +x ./restart.sh")
-            RESTART_GENERATED_FLAG.touch()
-            logger.info("已自动生成 restart.sh 文件， 检查脚本是否与本地指令符合...")
     if RESTART_MARK.exists():
         async with aiofiles.open(RESTART_MARK, encoding="utf8") as f:
             bot_id, user_id = (await f.read()).split()
