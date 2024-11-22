@@ -78,12 +78,11 @@ async def _(bot: Bot):
             async with aiofiles.open(RESTART_FILE, "w", encoding="utf8") as f:
                 await f.write(
                     "#!/bin/bash\n"
-                    "pid=$(netstat -tunlp | grep "
+                    "pid=$(netstat -tunlp 2>/dev/null | grep "
                     + str(bot.config.port)
                     + " | awk '{print $7}' | cut -d'/' -f1)\n"
-                    "pid=${pid%/*}\n"
                     "kill -9 $pid\n"
-                    "wait $pid 2>/dev/null || sleep 3\n"
+                    "wait $pid 2>/dev/null || sleep 5\n"
                     "if [[ -n \"$VIRTUAL_ENV\" ]]; then\n"
                     "    python3 bot.py\n"
                     "else\n"
