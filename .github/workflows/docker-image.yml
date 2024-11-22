@@ -14,10 +14,12 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Clone Repository
+    - name: Clone zhenxun_bot_docker Repository
       run: |
         git clone https://${{ secrets.GH_TOKEN }}@github.com/hui-ld/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker
-        
+    
+    - name: Clone zhenxun_bot Repository
+      run: |
         git clone --branch ${{ env.latest_version }} https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
     
     # 获取已处理的版本号
