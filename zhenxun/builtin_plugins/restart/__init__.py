@@ -82,15 +82,26 @@ async def _(bot: Bot):
                     + str(bot.config.port)
                     + " | awk '{print $7}' | cut -d'/' -f1)\n"
                     "kill -9 $pid\n"
-                    "wait $pid 2>/dev/null || sleep 5\n"
+                    "sleep 3\n"
+                    "\n"
+                    "if netstat -tunlp | grep -q "
+                    + str(bot.config.port)
+                    + "; then\n"
+                    "    echo \"端口被占用，无法启动 bot.py\"\n"
+                    "    exit 1\n"
+                    "fi\n"
+                    "\n"
                     "if [[ -n \"$VIRTUAL_ENV\" ]]; then\n"
+                    "    echo \"检测到当前在虚拟环境中，直接运行\"\n"
                     "    python3 bot.py\n"
                     "else\n"
+                    "    echo \"未检测到虚拟环境，使用 poetry 运行\"\n"
                     "    poetry run python3 bot.py\n"
                     "fi\n"
+                    "\n"
+                    "echo \"done\"\n"
                 )
             os.system("chmod +x ./restart.sh")
-            os.system("sudo chown 1000:1001 ./restart.sh")
             RESTART_GENERATED_FLAG.touch()
             logger.info("已自动生成 restart.sh 文件， 检查脚本是否与本地指令符合...")
     if RESTART_MARK.exists():
