@@ -34,7 +34,7 @@ services:
       - ./data:/app/zhenxun/data
       - ./resources:/app/zhenxun/resources 
       - ./log:/app/zhenxun/log
-      - ./zhenxun/plugins:/app/zhenxun/zhenxun/plugins （插件目录，非必须
+      - ./zhenxun/plugins:/app/zhenxun/zhenxun/plugins #（插件目录，非必须
     restart: no
 ```
 
