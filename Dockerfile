@@ -26,4 +26,6 @@ RUN poetry run playwright install --with-deps chromium
 
 RUN chmod +x ./restart.sh
 
+ENV TZ=Asia/Shanghai
+
 CMD ["./restart.sh"]
