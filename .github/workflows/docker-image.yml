@@ -16,11 +16,9 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Install Dependencies
+    - name: Install Docker Engine
       run: |
-        sudo apt-get update
-        sudo apt-get remove -y containerd || true
-        sudo apt-get install -y --no-install-recommends jq docker.io=20.10.24 containerd.io=1.6.21-1
+        curl -fsSL https://get.docker.com | sh
 
     - name: Validate Secrets
       run: |
@@ -29,21 +27,9 @@ jobs:
           exit 1
         fi
 
-    - name: Clone Source Repository
+    - name: Clone zhenxun_bot_docker Repository
       run: |
-        git clone https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
-
-    - name: Clone Custom Repository
-      run: |
-        git clone https://github.com/pasovo/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker
-
-    - name: Overwrite Files with Custom Repository
-      run: |
-        cp -r /tmp/zhenxun_bot_docker/* /tmp/zhenxun_bot/
-
-    - name: Docker Login
-      run: |
-        echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry.cn-hangzhou.aliyuncs.com -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+        git clone https://${{ secrets.GH_TOKEN }}@github.com/pasovo/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker || exit 1
 
     - name: Get Latest Release Version
       id: get-latest-version
@@ -56,10 +42,19 @@ jobs:
         echo "Latest release version: $latest_release"
         echo "latest_version=$latest_release" >> $GITHUB_ENV
 
+    - name: Clone zhenxun_bot Repository
+      run: |
+        git clone https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot || exit 1
+        cp -r /tmp/zhenxun_bot_docker/* /tmp/zhenxun_bot/ || exit 1
+
+    - name: Docker Login
+      run: |
+        echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry.cn-hangzhou.aliyuncs.com -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin || exit 1
+
     - name: Build and Push Docker Image
       run: |
         cd /tmp/zhenxun_bot
-        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} .
+        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} . || exit 1
         docker tag registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
-        docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }}
-        docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
+        docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} || exit 1
+        docker push registry.cn-h
