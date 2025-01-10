@@ -16,27 +16,49 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Clone zhenxun_bot_docker Repository
+    - name: Install Dependencies
       run: |
-        git clone https://${{ secrets.GH_TOKEN }}@github.com/hui-ld/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker
+        sudo apt-get update
+        sudo apt-get install -y jq docker.io
+
+    - name: Validate Secrets
+      run: |
+        if [ -z "${{ secrets.GH_TOKEN }}" ] || [ -z "${{ secrets.REGISTRY_USERNAME }}" ] || [ -z "${{ secrets.REGISTRY_PASSWORD }}" ]; then
+          echo "Required secrets are not set or empty."
+          exit 1
+        fi
+
+    - name: Clone Source Repository
+      run: |
+        git clone https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
+
+    - name: Clone Custom Repository
+      run: |
+        git clone https://github.com/pasovo/zhenxun_bot_docker.git /tmp/zhenxun_bot_docker
+
+    - name: Overwrite Files with Custom Repository
+      run: |
+        cp -r /tmp/zhenxun_bot_docker/* /tmp/zhenxun_bot/
+
+    - name: Docker Login
+      run: |
+        echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry.cn-hangzhou.aliyuncs.com -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
     - name: Get Latest Release Version
       id: get-latest-version
       run: |
         latest_release=$(curl -s https://api.github.com/repos/HibiKier/zhenxun_bot/releases/latest | jq -r .tag_name)
+        if [ -z "$latest_release" ]; then
+          echo "Failed to fetch the latest release version."
+          exit 1
+        fi
         echo "Latest release version: $latest_release"
         echo "latest_version=$latest_release" >> $GITHUB_ENV
 
-    - name: Clone zhenxun_bot Repository
-      run: |
-        git clone https://github.com/HibiKier/zhenxun_bot.git /tmp/zhenxun_bot
-        cp -r /tmp/zhenxun_bot_docker/* /tmp/zhenxun_bot/
-
     - name: Build and Push Docker Image
       run: |
-        docker login -u "${{ secrets.REGISTRY_USERNAME }}" -p "${{ secrets.REGISTRY_PASSWORD }}" registry.cn-hangzhou.aliyuncs.com
         cd /tmp/zhenxun_bot
-        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} . 
+        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} .
         docker tag registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }}
         docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
