@@ -54,7 +54,7 @@ jobs:
     - name: Build and Push Docker Image
       run: |
         cd /tmp/zhenxun_bot
-        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} . || exit 1
+        docker build -t registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} .
         docker tag registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
-        docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }} || exit 1
-        docker push registry.cn-h
+        docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:${{ env.latest_version }}
+        docker push registry.cn-hangzhou.aliyuncs.com/starfishes/zhenxun-docker:latest
