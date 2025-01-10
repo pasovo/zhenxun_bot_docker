@@ -42,6 +42,6 @@ EXPOSE 8080
 
 VOLUME ["/app/zhenxun/data", "/app/zhenxun/resources", "/app/zhenxun/log"]
 
-RUN shmod +x ./restart.sh
+RUN chmod +x ./restart.sh
 
 CMD ["./restart.sh"]
